@@ -1,7 +1,13 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const Users = require('../users/users-model.js');
+const jwtSecret = require('../config/secrets').jwtSecret;
+// could also descruct it
+// const { jwtSecret  }= require('../config/secrets');
+
+
 
 // for endpoints beginning with /api/auth
 router.post('/register', (req, res) => {
@@ -25,7 +31,9 @@ router.post('/login', (req, res) => {
     .first()
     .then(user => {
       if (user && bcrypt.compareSync(password, user.password)) {
+        const token = generateToken(user)
         res.status(200).json({
+          token,
           message: `Welcome ${user.username}!`,
         });
       } else {
@@ -36,5 +44,20 @@ router.post('/login', (req, res) => {
       res.status(500).json(error);
     });
 });
+
+function generateToken(user){
+  const payload = {
+    subject: user.id,
+    username: user.username
+  };
+
+  const options = {
+    expiresIn: '1d'
+  };
+
+  // const secret = 'shhhhdonttellanyone';
+
+  return jwt.sign(payload, jwtSecret, options)
+}
 
 module.exports = router;
